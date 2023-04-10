@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventName {
+  SET_UP
+  STARTED
+  UTTERANCE
+  HEARTBEAT
+  STOPPED
+}
+
+model DailyMetric {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  utterancesNb      Int
+  setupsNb          Int
+  onlineInstancesNb Int
+  activeOwnersNb    Int
+}
+
+model Instance {
+  id                  Int         @id @default(autoincrement())
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  instanceID          String      @unique
+  isOnline            Boolean
+  language            String
+  environment         Json
+  sttProvider         String
+  ttsProvider         String
+  coreVersion         String
+  pythonBridgeVersion String
+  tcpServerVersion    String
+  events              Event[]
+  utterances          Utterance[]
+  errors              Error[]
+}
+
+model Event {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  instanceID String    @unique
+  name       EventName
+  instance   Instance  @relation(fields: [instanceID], references: [instanceID])
+}
+
+model Utterance {
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  instanceID            String
+  value                 String
+  triggeredDomain       String
+  triggeredSkill        String
+  triggeredAction       String
+  triggeredSkillVersion String
+  triggeredSkillBridge  String
+  probability           Float
+  language              String
+  executionTime         Float
+  instance              Instance @relation(fields: [instanceID], references: [instanceID])
+}
+
+model Error {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  instanceID String
+  message    String
+  instance   Instance @relation(fields: [instanceID], references: [instanceID])
+}
