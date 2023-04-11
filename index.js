@@ -1,0 +1,210 @@
+const path = require('node:path')
+
+const dotenv = require('dotenv')
+const Fastify = require('fastify')
+const { PrismaClient } = require('@prisma/client')
+const uuid = require('uuid')
+
+dotenv.config({
+  path: path.join('.env')
+})
+
+const FASTIFY = Fastify({
+  logger: false
+})
+const PRISMA = new PrismaClient()
+const EVENT_NAMES = {
+  SETUP: 'SETUP',
+  STARTED: 'STARTED',
+  UTTERANCE: 'UTTERANCE',
+  HEARTBEAT: 'HEARTBEAT',
+  STOPPED: 'STOPPED'
+}
+const RESPONSES = {
+  success: (reply) => {
+    reply.type('application/json').code(200)
+    return { success: true }
+  },
+  missingFields: (reply) => {
+    reply.type('application/json').code(400)
+    return { success: false, error: 'Missing required fields' }
+  },
+  instanceNotFound: (reply) => {
+    reply.type('application/json').code(404)
+    return { success: false, error: 'Instance not found' }
+  },
+  internalError: (reply, e) => {
+    reply.type('application/json').code(500)
+    return { success: false, error: String(e) }
+  }
+}
+
+async function hasInstanceID(instanceID) {
+  const instance = await PRISMA.instance.findUnique({
+    where: {
+      instanceID
+    }
+  })
+
+  return instance !== null
+}
+function pushEvent(instanceID, eventName) {
+  return PRISMA.event.create({
+    data: {
+      instanceID,
+      name: EVENT_NAMES[eventName]
+    }
+  })
+}
+
+/**
+ * Push new instance if it does not exist
+ * Push new SETUP event
+ */
+FASTIFY.post('/on-postinstall', async (request, reply) => {
+  try {
+    const instanceID = request.body.instanceID || uuid.v4()
+
+    if (!await hasInstanceID(instanceID)) {
+      await PRISMA.instance.create({
+        data: {
+          instanceID
+        }
+      })
+    }
+
+    await pushEvent(instanceID, EVENT_NAMES.SETUP)
+
+    reply.type('application/json').code(200)
+    return { success: true, instanceID }
+  } catch (e) {
+    return RESPONSES.internalError(reply, e)
+  }
+})
+
+FASTIFY.post('/on-start', async (request, reply) => {
+  try {
+    if (!request.body.instanceID || !request.body.data) {
+      return RESPONSES.missingFields(reply)
+    }
+
+    const { instanceID, data } = request.body
+
+    if (!await hasInstanceID(instanceID)) {
+      return RESPONSES.instanceNotFound(reply)
+    }
+
+    await Promise.all([
+      PRISMA.instance.upsert({
+        where: { instanceID },
+        update: {
+          ...data
+        },
+        create: {
+          instanceID,
+          ...data
+        }
+      }),
+      pushEvent(instanceID, EVENT_NAMES.STARTED)
+    ])
+
+    return RESPONSES.success(reply)
+  } catch (e) {
+    return RESPONSES.internalError(reply, e)
+  }
+})
+
+/**
+ * Push new utterance data
+ * Push new UTTERANCE event
+ */
+FASTIFY.post('/on-utterance', async (request, reply) => {
+  try {
+    if (!request.body.instanceID || !request.body.data) {
+      return RESPONSES.missingFields(reply)
+    }
+
+    const { instanceID, data } = request.body
+
+    if (!await hasInstanceID(instanceID)) {
+      return RESPONSES.instanceNotFound(reply)
+    }
+
+    await Promise.all([
+      PRISMA.utterance.create({
+        data: {
+          instanceID,
+          ...data
+        }
+      }),
+      pushEvent(instanceID, EVENT_NAMES.UTTERANCE)
+    ])
+
+    return RESPONSES.success(reply)
+  } catch (e) {
+    return RESPONSES.internalError(reply, e)
+  }
+})
+
+/**
+ * Push new event
+ */
+FASTIFY.post('/on-event', async (request, reply) => {
+  try {
+    if (!request.body.instanceID || !request.body.eventName) {
+      return RESPONSES.missingFields(reply)
+    }
+    if (!Object.values(EVENT_NAMES).includes(request.body.eventName)) {
+      reply.type('application/json').code(400)
+      return { success: false, error: 'Invalid event name' }
+    }
+
+    const { instanceID, eventName } = request.body
+
+    if (!await hasInstanceID(instanceID)) {
+      return RESPONSES.instanceNotFound(reply)
+    }
+
+    await pushEvent(instanceID, EVENT_NAMES[eventName])
+
+    return RESPONSES.success(reply)
+  } catch (e) {
+    return RESPONSES.internalError(reply, e)
+  }
+})
+
+/**
+ * Push new error
+ */
+FASTIFY.post('/on-error', async (request, reply) => {
+  try {
+    if (!request.body.instanceID || !request.body.error) {
+      return RESPONSES.missingFields(reply)
+    }
+
+    const { instanceID, error } = request.body
+
+    if (!await hasInstanceID(instanceID)) {
+      return RESPONSES.instanceNotFound(reply)
+    }
+
+    await PRISMA.error.create({
+      data: {
+        instance: instanceID,
+        message: error
+      }
+    })
+
+    return RESPONSES.success(reply)
+  } catch (e) {
+    return RESPONSES.internalError(reply, e)
+  }
+})
+
+FASTIFY.listen({ port: process.env.SERVER_PORT }, (err, address) => {
+  if (err) {
+    throw err
+  }
+
+  console.log(`Server is now listening on ${address}`)
+})

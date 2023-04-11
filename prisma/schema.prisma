@@ -11,7 +11,7 @@ datasource db {
 }
 
 enum EventName {
-  SET_UP
+  SETUP
   STARTED
   UTTERANCE
   HEARTBEAT
@@ -33,14 +33,14 @@ model Instance {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
   instanceID          String      @unique
-  isOnline            Boolean
-  language            String
-  environment         Json
-  sttProvider         String
-  ttsProvider         String
-  coreVersion         String
-  pythonBridgeVersion String
-  tcpServerVersion    String
+  isOnline            Boolean?
+  language            String?
+  environment         Json?
+  sttProvider         String?
+  ttsProvider         String?
+  coreVersion         String?
+  pythonBridgeVersion String?
+  tcpServerVersion    String?
   events              Event[]
   utterances          Utterance[]
   errors              Error[]

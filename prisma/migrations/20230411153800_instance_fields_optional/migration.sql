@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "Instance" ALTER COLUMN "isOnline" DROP NOT NULL,
+ALTER COLUMN "language" DROP NOT NULL,
+ALTER COLUMN "environment" DROP NOT NULL,
+ALTER COLUMN "sttProvider" DROP NOT NULL,
+ALTER COLUMN "ttsProvider" DROP NOT NULL,
+ALTER COLUMN "coreVersion" DROP NOT NULL,
+ALTER COLUMN "pythonBridgeVersion" DROP NOT NULL,
+ALTER COLUMN "tcpServerVersion" DROP NOT NULL;
