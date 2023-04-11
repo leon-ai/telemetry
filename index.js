@@ -2,8 +2,12 @@ const path = require('node:path')
 
 const dotenv = require('dotenv')
 const Fastify = require('fastify')
+const Queue = require('bull')
 const { PrismaClient } = require('@prisma/client')
 const uuid = require('uuid')
+
+const { EVENT_NAMES } = require('./constants.js')
+const dailyMetricsJob = require('./jobs/daily-metrics-job.js')
 
 dotenv.config({
   path: path.join('.env')
@@ -13,13 +17,6 @@ const FASTIFY = Fastify({
   logger: false
 })
 const PRISMA = new PrismaClient()
-const EVENT_NAMES = {
-  SETUP: 'SETUP',
-  STARTED: 'STARTED',
-  UTTERANCE: 'UTTERANCE',
-  HEARTBEAT: 'HEARTBEAT',
-  STOPPED: 'STOPPED'
-}
 const RESPONSES = {
   success: (reply) => {
     reply.type('application/json').code(200)
@@ -201,9 +198,48 @@ FASTIFY.post('/on-error', async (request, reply) => {
   }
 })
 
-FASTIFY.listen({ port: process.env.SERVER_PORT }, (err, address) => {
+FASTIFY.listen({
+  host: process.env.SERVER_HOST,
+  port: process.env.SERVER_PORT
+}, async (err, address) => {
   if (err) {
     throw err
+  }
+
+  try {
+    const dailyMetricsQueue = new Queue('daily-metrics', {
+      redis: {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT
+      }
+    })
+
+    await dailyMetricsQueue.add(null, {
+      repeat: {
+        // Every day at midnight UTC
+        cron: '0 0 * * *'
+        // cron: '*/10 * * * * *'
+      }
+    })
+
+    dailyMetricsQueue.process(() => {
+      return dailyMetricsJob(PRISMA)
+    })
+
+    dailyMetricsQueue.on('error', (err) => {
+      console.error('Error in daily metrics queue', err)
+    })
+    dailyMetricsQueue.on('waiting', (jobID) => {
+      console.log('Daily metrics job waiting', jobID)
+    })
+    dailyMetricsQueue.on('active', (job) => {
+      console.log('Daily metrics job started', job.id)
+    })
+    dailyMetricsQueue.on('completed', (job, result) => {
+      console.log('Daily metrics job completed', result)
+    })
+  } catch (e) {
+    console.error('Failed to init the daily metrics queue', e)
   }
 
   console.log(`Server is now listening on ${address}`)

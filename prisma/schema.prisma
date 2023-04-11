@@ -23,9 +23,10 @@ model DailyMetric {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   utterancesNb      Int
+  instancesNb       Int
   setupsNb          Int
   onlineInstancesNb Int
-  activeOwnersNb    Int
+  activeInstancesNb Int
 }
 
 model Instance {
@@ -35,7 +36,7 @@ model Instance {
   instanceID          String      @unique
   isOnline            Boolean?
   language            String?
-  environment         Json?
+  environment         Json?       @default("{}")
   sttProvider         String?
   ttsProvider         String?
   coreVersion         String?
@@ -50,7 +51,7 @@ model Event {
   id         Int       @id @default(autoincrement())
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  instanceID String    @unique
+  instanceID String
   name       EventName
   instance   Instance  @relation(fields: [instanceID], references: [instanceID])
 }
