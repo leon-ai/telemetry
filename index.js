@@ -65,7 +65,8 @@ FASTIFY.post('/on-postinstall', async (request, reply) => {
     if (!await hasInstanceID(instanceID)) {
       await PRISMA.instance.create({
         data: {
-          instanceID
+          instanceID,
+          birthDate: Date.now()
         }
       })
     }
