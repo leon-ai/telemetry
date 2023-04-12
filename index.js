@@ -58,7 +58,7 @@ function pushEvent(instanceID, eventName) {
  * Push new instance if it does not exist
  * Push new SETUP event
  */
-FASTIFY.post('/on-postinstall', async (request, reply) => {
+FASTIFY.post('/on-post-install', async (request, reply) => {
   try {
     const instanceID = request.body.instanceID || uuid.v4()
 
@@ -191,7 +191,7 @@ FASTIFY.post('/on-error', async (request, reply) => {
 
     await PRISMA.error.create({
       data: {
-        instance: instanceID,
+        instanceID,
         message: error
       }
     })
@@ -217,6 +217,11 @@ FASTIFY.listen({
         port: process.env.REDIS_PORT
       }
     })
+
+    const jobCounts = await dailyMetricsQueue.getJobCounts()
+    console.log('daily-metrics jobs count:', jobCounts)
+
+    await dailyMetricsQueue.clean(0, 'delayed')
 
     await dailyMetricsQueue.add(null, {
       repeat: {
