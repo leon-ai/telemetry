@@ -36,6 +36,7 @@ model Instance {
   instanceID          String      @unique
   isOnline            Boolean?
   language            String?
+  isProduction        Boolean?
   environment         Json?       @default("{}")
   sttProvider         String?
   ttsProvider         String?

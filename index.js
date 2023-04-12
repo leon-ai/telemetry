@@ -91,10 +91,6 @@ FASTIFY.post('/on-start', async (request, reply) => {
 
     const { instanceID, data } = request.body
 
-    if (!await hasInstanceID(instanceID)) {
-      return RESPONSES.instanceNotFound(reply)
-    }
-
     await Promise.all([
       PRISMA.instance.upsert({
         where: { instanceID },
