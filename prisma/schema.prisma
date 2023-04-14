@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,23 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum EventName {
-  SETUP
-  STARTED
-  UTTERANCE
-  HEARTBEAT
-  STOPPED
-}
-
 model DailyMetric {
   id                Int      @id @default(autoincrement())
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   utterancesNb      Int
-  instancesNb       Int
   setupsNb          Int
   onlineInstancesNb Int
   activeInstancesNb Int
+  instancesNb       Int
 }
 
 model Instance {
@@ -36,16 +25,16 @@ model Instance {
   instanceID          String      @unique
   isOnline            Boolean?
   language            String?
-  isProduction        Boolean?
   environment         Json?       @default("{}")
   sttProvider         String?
   ttsProvider         String?
   coreVersion         String?
   pythonBridgeVersion String?
   tcpServerVersion    String?
+  isProduction        Boolean?
+  errors              Error[]
   events              Event[]
   utterances          Utterance[]
-  errors              Error[]
 }
 
 model Event {
@@ -81,4 +70,12 @@ model Error {
   instanceID String
   message    String
   instance   Instance @relation(fields: [instanceID], references: [instanceID])
+}
+
+enum EventName {
+  SETUP
+  STARTED
+  UTTERANCE
+  HEARTBEAT
+  STOPPED
 }
