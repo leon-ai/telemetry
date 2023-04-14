@@ -91,19 +91,18 @@ FASTIFY.post('/on-start', async (request, reply) => {
 
     const { instanceID, data } = request.body
 
-    await Promise.all([
-      PRISMA.instance.upsert({
-        where: { instanceID },
-        update: {
-          ...data
-        },
-        create: {
-          instanceID,
-          ...data
-        }
-      }),
-      pushEvent(instanceID, EVENT_NAMES.STARTED)
-    ])
+    await PRISMA.instance.upsert({
+      where: { instanceID },
+      update: {
+        ...data
+      },
+      create: {
+        instanceID,
+        ...data
+      }
+    })
+    // Upsert first as the instance may not exist yet
+    await pushEvent(instanceID, EVENT_NAMES.STARTED)
 
     return RESPONSES.success(reply)
   } catch (e) {
