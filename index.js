@@ -161,6 +161,15 @@ FASTIFY.post('/on-event', async (request, reply) => {
       return RESPONSES.instanceNotFound(reply)
     }
 
+    if (eventName === EVENT_NAMES.STOPPED) {
+      await PRISMA.instance.update({
+        where: { instanceID },
+        data: {
+          isOnline: false
+        }
+      })
+    }
+
     await pushEvent(instanceID, EVENT_NAMES[eventName])
 
     return RESPONSES.success(reply)
