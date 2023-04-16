@@ -59,7 +59,9 @@ model Utterance {
   triggeredSkillBridge  String?
   probability           Float
   language              String
-  executionTime         Float
+  processingTime        Float?
+  executionTime         Float?
+  nluProcessingTime     Float?
   instance              Instance @relation(fields: [instanceID], references: [instanceID])
 }
 
