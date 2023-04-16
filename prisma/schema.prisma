@@ -56,7 +56,7 @@ model Utterance {
   triggeredSkill        String
   triggeredAction       String
   triggeredSkillVersion String
-  triggeredSkillBridge  String
+  triggeredSkillBridge  String?
   probability           Float
   language              String
   executionTime         Float
