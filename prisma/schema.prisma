@@ -52,12 +52,12 @@ model Utterance {
   updatedAt             DateTime @updatedAt
   instanceID            String
   value                 String
-  triggeredDomain       String
-  triggeredSkill        String
-  triggeredAction       String
-  triggeredSkillVersion String
+  triggeredDomain       String?
+  triggeredSkill        String?
+  triggeredAction       String?
+  triggeredSkillVersion String?
   triggeredSkillBridge  String?
-  probability           Float
+  probability           Float?
   language              String
   processingTime        Float?
   executionTime         Float?
