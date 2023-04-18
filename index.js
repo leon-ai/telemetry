@@ -231,7 +231,7 @@ FASTIFY.listen({
       repeat: {
         // Every day at midnight UTC
         cron: '0 0 * * *'
-        // cron: '*/10 * * * * *'
+        // cron: '*/20 * * * * *'
       }
     })
 

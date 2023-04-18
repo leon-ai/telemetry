@@ -5,12 +5,15 @@ const { EVENT_NAMES } = require('../constants.js')
  */
 module.exports = async function dailyMetricsJob(prisma) {
   try {
+    const now = new Date()
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1_000)
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1_000)
     const [dailyInstancesNb, dailyActiveInstancesNb, dailyUtterancesNb, dailySetupsNb, dailyOnlineInstanceNb] = await Promise.all([
       // Count instances that have been created in the last 24 hours
       prisma.instance.count({
         where: {
           createdAt: {
-            gte: new Date(new Date().setUTCHours(0, 0, 0, 0))
+            gte: twentyFourHoursAgo
           }
         }
       }),
@@ -20,7 +23,7 @@ module.exports = async function dailyMetricsJob(prisma) {
           utterances: {
             some: {
               createdAt: {
-                gte: new Date(new Date().setDate(new Date().getDate() - 30))
+                gte: thirtyDaysAgo
               }
             }
           }
@@ -30,7 +33,7 @@ module.exports = async function dailyMetricsJob(prisma) {
       prisma.utterance.count({
         where: {
           createdAt: {
-            gte: new Date(new Date().setUTCHours(0, 0, 0, 0))
+            gte: twentyFourHoursAgo
           }
         }
       }),
@@ -39,7 +42,7 @@ module.exports = async function dailyMetricsJob(prisma) {
         where: {
           name: EVENT_NAMES.SETUP,
           createdAt: {
-            gte: new Date(new Date().setUTCHours(0, 0, 0, 0))
+            gte: twentyFourHoursAgo
           }
         }
       }),
@@ -50,7 +53,7 @@ module.exports = async function dailyMetricsJob(prisma) {
             some: {
               name: EVENT_NAMES.HEARTBEAT,
               createdAt: {
-                gte: new Date(new Date().setUTCHours(0, 0, 0, 0))
+                gte: twentyFourHoursAgo
               }
             }
           }
@@ -64,7 +67,7 @@ module.exports = async function dailyMetricsJob(prisma) {
         events: {
           every: {
             createdAt: {
-              lt: new Date(new Date().setUTCHours(0, 0, 0, 0))
+              lt: twentyFourHoursAgo
             }
           }
         }
