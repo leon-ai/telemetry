@@ -32,6 +32,7 @@ model Instance {
   pythonBridgeVersion String?
   tcpServerVersion    String?
   isProduction        Boolean?
+  isGitpod            Boolean?
   errors              Error[]
   events              Event[]
   utterances          Utterance[]
