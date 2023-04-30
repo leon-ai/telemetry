@@ -29,6 +29,7 @@ model Instance {
   sttProvider         String?
   ttsProvider         String?
   coreVersion         String?
+  nodeJSBridgeVersion String?
   pythonBridgeVersion String?
   tcpServerVersion    String?
   isProduction        Boolean?
