@@ -35,6 +35,13 @@ const RESPONSES = {
     return { success: false, error: String(e) }
   }
 }
+const LAST_EVENTS_DATE = {
+  [EVENT_NAMES.SETUP]: 'lastSetupAt',
+  [EVENT_NAMES.STARTED]: 'lastStartAt',
+  [EVENT_NAMES.UTTERANCE]: 'lastUtteranceAt',
+  [EVENT_NAMES.HEARTBEAT]: 'lastHeartbeatAt',
+  [EVENT_NAMES.STOPPED]: 'lastStopAt'
+}
 
 async function hasInstanceID(instanceID) {
   const instance = await PRISMA.instance.findUnique({
@@ -46,12 +53,20 @@ async function hasInstanceID(instanceID) {
   return instance !== null
 }
 function pushEvent(instanceID, eventName) {
-  return PRISMA.event.create({
-    data: {
-      instanceID,
-      name: EVENT_NAMES[eventName]
-    }
-  })
+  return Promise.all([
+    PRISMA.event.create({
+      data: {
+        instanceID,
+        name: EVENT_NAMES[eventName]
+      }
+    }),
+    PRISMA.instance.update({
+      where: { instanceID },
+      data: {
+        [LAST_EVENTS_DATE[eventName]]: new Date()
+      }
+    })
+  ])
 }
 
 /**
@@ -193,12 +208,20 @@ FASTIFY.post('/on-error', async (request, reply) => {
       return RESPONSES.instanceNotFound(reply)
     }
 
-    await PRISMA.error.create({
-      data: {
-        instanceID,
-        message: error
-      }
-    })
+    await Promise.all([
+      PRISMA.error.create({
+        data: {
+          instanceID,
+          message: error
+        }
+      }),
+      PRISMA.instance.update({
+        where: { instanceID },
+        data: {
+          lastErrorAt: new Date()
+        }
+      })
+    ])
 
     return RESPONSES.success(reply)
   } catch (e) {

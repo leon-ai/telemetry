@@ -35,10 +35,10 @@ model Instance {
   isProduction        Boolean?
   isGitpod            Boolean?
   lastSetupAt         DateTime?
-  lastStartedAt       DateTime?
+  lastStartAt         DateTime?
   lastUtteranceAt     DateTime?
   lastHeartbeatAt     DateTime?
-  lastStoppedAt       DateTime?
+  lastStopAt          DateTime?
   lastErrorAt         DateTime?
   errors              Error[]
   events              Event[]
