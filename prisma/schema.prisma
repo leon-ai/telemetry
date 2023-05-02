@@ -34,6 +34,12 @@ model Instance {
   tcpServerVersion    String?
   isProduction        Boolean?
   isGitpod            Boolean?
+  lastSetupAt         DateTime?
+  lastStartedAt       DateTime?
+  lastUtteranceAt     DateTime?
+  lastHeartbeatAt     DateTime?
+  lastStoppedAt       DateTime?
+  lastErrorAt         DateTime?
   errors              Error[]
   events              Event[]
   utterances          Utterance[]
