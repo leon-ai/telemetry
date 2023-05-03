@@ -109,11 +109,13 @@ FASTIFY.post('/on-start', async (request, reply) => {
     await PRISMA.instance.upsert({
       where: { instanceID },
       update: {
-        ...data
+        ...data,
+        isOnline: true
       },
       create: {
         instanceID,
-        ...data
+        ...data,
+        isOnline: true
       }
     })
     // Upsert first as the instance may not exist yet
@@ -176,11 +178,19 @@ FASTIFY.post('/on-event', async (request, reply) => {
       return RESPONSES.instanceNotFound(reply)
     }
 
-    if (eventName === EVENT_NAMES.STOPPED) {
+    if (eventName === EVENT_NAMES.STOPPED || eventName === EVENT_NAMES.HEARTBEAT) {
+      const { lastStartAt } = await PRISMA.instance.findUnique({
+        where: { instanceID },
+        select: { lastStartAt: true }
+      })
+
       await PRISMA.instance.update({
         where: { instanceID },
         data: {
-          isOnline: false
+          lastUptime: !lastStartAt
+            ? 0
+            : Math.round((new Date() - lastStartAt) / 1_000),
+          isOnline: eventName === EVENT_NAMES.HEARTBEAT
         }
       })
     }
