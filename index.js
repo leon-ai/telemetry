@@ -80,7 +80,8 @@ FASTIFY.post('/on-post-install', async (request, reply) => {
     if (!await hasInstanceID(instanceID)) {
       await PRISMA.instance.create({
         data: {
-          instanceID
+          instanceID,
+          isGitpod: request.body.isGitpod
         }
       })
     }
